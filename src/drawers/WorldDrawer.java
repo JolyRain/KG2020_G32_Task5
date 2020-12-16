@@ -1,10 +1,10 @@
 package drawers;
 
-import engine.Field;
-import engine.ForceSource;
+import engine.Explosion;
+import engine.Space;
 import engine.World;
-import engine.spaceObjects.HeavenlyBody;
-import engine.spaceObjects.Orbit;
+import engine.HeavenlyBody;
+import engine.Orbit;
 import math.Vector2;
 import screen.ScreenConverter;
 import screen.ScreenCoordinates;
@@ -39,25 +39,26 @@ public class WorldDrawer extends GraphicsDrawer implements IWorldDrawer {
     @Override
     public void draw(World world) {
         drawSpace(world);
-        drawSpaceObjects(world.getHeavenlyBodies());
+        drawSpaceObjects(world.getSolarSystem().getBodies());
         drawLegend(world);
+        drawExplosions(world);
     }
 
     private void drawLegend(World world) {
-        Field field = world.getField();
-        ForceSource externalForce = world.getExternalForce();
-        getGraphics2D().setColor(Color.WHITE);
-        getGraphics2D().drawString(String.format("Mu=%.2f", field.getMu()), 10, 30);
-        getGraphics2D().drawString(String.format("F=%.0f", externalForce.getValue()), 10, 50);
+        Space space = world.getSpace();
+//        GravityForce externalForce = world.getExternalForce();
+//        getGraphics2D().setColor(Color.WHITE);
+//        getGraphics2D().drawString(String.format("Mu=%.2f", field.getMu()), 10, 30);
+//        getGraphics2D().drawString(String.format("F=%.0f", externalForce.getValue()), 10, 50);
     }
 
     private void drawSpace(World world) {
-        Field field = world.getField();
+        Space space = world.getSpace();
         Graphics2D graphics2D = getGraphics2D();
         ScreenConverter screenConverter = getScreenConverter();
-        ScreenPoint tl = screenConverter.r2s(field.getRectangle().getTopLeft());
-        int w = screenConverter.r2sDistanceH(field.getRectangle().getWidth());
-        int h = screenConverter.r2sDistanceV(field.getRectangle().getHeight());
+        ScreenPoint tl = screenConverter.r2s(space.getRectangle().getTopLeft());
+        int w = screenConverter.r2sDistanceH(space.getRectangle().getWidth());
+        int h = screenConverter.r2sDistanceV(space.getRectangle().getHeight());
         graphics2D.setColor(Color.BLACK);
         graphics2D.fillRect(0, 0, screenConverter.getWs(), screenConverter.getHs());
 //        graphics2D.setColor(Color.RED);
@@ -70,6 +71,23 @@ public class WorldDrawer extends GraphicsDrawer implements IWorldDrawer {
         for (HeavenlyBody body : heavenlyBodies) {
             spaceBodyDrawer.drawSpaceObject(body);
         }
+    }
+
+    private void drawExplosions(World world) {
+        for (Map.Entry<HeavenlyBody, Explosion> exp : world.getExplosions().entrySet()) {
+            drawExplosion(exp.getValue());
+        }
+    }
+
+    private void drawExplosion(Explosion explosion) {
+        Graphics2D graphics2D = getGraphics2D();
+        ScreenConverter screenConverter = getScreenConverter();
+        List<ScreenPoint> screenPoints = screenConverter.r2s(explosion.getPoints());
+        ScreenCoordinates screenCoordinates = new ScreenCoordinates(screenPoints);
+
+        graphics2D.setColor(Color.RED);
+        graphics2D.fillPolygon(screenCoordinates.getXx(), screenCoordinates.getYy(), screenCoordinates.size());
+
     }
 
     private void drawPath(World world) {

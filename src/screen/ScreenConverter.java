@@ -4,7 +4,7 @@
  */
 package screen;
 
-import engine.spaceObjects.HeavenlyBody;
+import engine.HeavenlyBody;
 import math.Rectangle;
 import math.Vector2;
 

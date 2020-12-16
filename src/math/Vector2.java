@@ -4,6 +4,9 @@
  */
 package math;
 
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+
 /**
  * Описывает координаты реальной точки.
  *
@@ -21,6 +24,20 @@ public class Vector2 {
     public Vector2(double x, double y) {
         this.x = x;
         this.y = y;
+    }
+
+    public Vector2 rotate(Vector2 point, double angle){
+        Vector2 rotatedPoint = new Vector2(0,0);
+        rotatedPoint.x = point.x * cos(angle) - point.y * sin(angle);
+        rotatedPoint.y = point.x * sin(angle) + point.y * cos(angle);
+        return rotatedPoint;
+    }
+
+    public Vector2 rotate(Vector2 center, Vector2 point, double angle){
+        Vector2 rotatedPoint = new Vector2(0,0);
+        rotatedPoint.x = center.x + (point.x - center.x) * cos(angle) - (point.y - center.y) * sin(angle);
+        rotatedPoint.y = center.y + (point.y - center.y) * cos(angle) + (point.x - center.x) * sin(angle);
+        return rotatedPoint;
     }
 
     public double getX() {

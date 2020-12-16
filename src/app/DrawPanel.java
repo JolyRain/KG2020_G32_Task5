@@ -5,10 +5,10 @@ package app;/*
 
 import drawers.IWorldDrawer;
 import drawers.WorldDrawer;
-import engine.Field;
-import engine.ForceSource;
+import engine.Space;
+import engine.GravityForce;
 import engine.World;
-import engine.spaceObjects.HeavenlyBody;
+import engine.HeavenlyBody;
 import math.Rectangle;
 import math.Vector2;
 import screen.ScreenConverter;
@@ -42,34 +42,51 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
 
     public DrawPanel() {
         super();
-        Field field = new Field(
-                new Rectangle(-2e8 * 1000, 2e8 * 1000, 4e8 * 1000, 4e8 * 1000),
-                0.1, 9.8);
+        Space space = new Space(
+                new Rectangle(-2e8 * 1000, 2e8 * 1000, 4e8 * 1000, 4e8 * 1000));
 
         Set<HeavenlyBody> bodies = new HashSet<>();
-        HeavenlyBody body1 = new HeavenlyBody(1.989e27 * 1000, field.getRectangle().getWidth() / 20, field.getRectangle().getCenter());
-        HeavenlyBody body2 = new HeavenlyBody(5.972e21 * 1000, field.getRectangle().getWidth() / 40, new Vector2(14.95e7 * 1000, 0));
-        HeavenlyBody body3 = new HeavenlyBody(5.972e21 * 1000, field.getRectangle().getWidth() / 40, new Vector2(16.95e7 * 1000, 0));
+        HeavenlyBody body1 = new HeavenlyBody(1.989e27 * 1000, space.getRectangle().getWidth()/ 20, space.getRectangle().getCenter());
+        HeavenlyBody body2 = new HeavenlyBody(5.972e21 * 1000, space.getRectangle().getWidth()/ 40, new Vector2(14.95e7 * 1000, 0));
+        HeavenlyBody body3 = new HeavenlyBody(7.34e19 * 1000, space.getRectangle().getWidth()/ 160, new Vector2(17e7 * 1000, 0));
+        HeavenlyBody body4 = new HeavenlyBody(10.972e21 * 1000, space.getRectangle().getWidth() / 40, new Vector2(30.95e7 * 1000, 0));
 
         body1.setVelocity(new Vector2(0, 0));
         body2.setVelocity(new Vector2(0, 2.592e6 * 1000));
-        body3.setVelocity(new Vector2(0, 2.592e6 * 1000));
+        body3.setVelocity(new Vector2(0, (881280) * 1000));
+        body4.setVelocity(new Vector2(0, 1.592e6 * 1000));
+
+//        Space space = new Space(
+//                new Rectangle(-10, 10, 20, 20));
+//
+//        Set<HeavenlyBody> bodies = new HashSet<>();
+//        HeavenlyBody body1 = new HeavenlyBody(10000, space.getRectangle().getWidth() / 20, space.getRectangle().getCenter());
+//        HeavenlyBody body2 = new HeavenlyBody(1, space.getRectangle().getWidth() / 40, new Vector2(10, 0));
+//        HeavenlyBody body3 = new HeavenlyBody(1, space.getRectangle().getWidth() / 40, new Vector2(6, 0));
+//        HeavenlyBody body4 = new HeavenlyBody(1, space.getRectangle().getWidth() / 40, new Vector2(10, 0));
+//
+//        body1.setVelocity(new Vector2(0, 0));
+//        body2.setVelocity(new Vector2(0, 10));
+//        body3.setVelocity(new Vector2(0, 1));
+//        body4.setVelocity(new Vector2(0, 1));
 
 
-        System.out.println(new ForceSource(new Vector2(0, 0)).gravity(body1, body2) + "////////////////////");
+        System.out.println(new GravityForce(new Vector2(0, 0)).gravity(body1, body2) + "////////////////////");
 
         body1.setColor(Color.YELLOW);
         body2.setColor(Color.BLUE);
-        body3.setColor(Color.RED);
+        body3.setColor(Color.GRAY);
+        body4.setColor(Color.GREEN);
 
 
         bodies.add(body1);
         bodies.add(body2);
-        bodies.add(body3);
+//        bodies.add(body3);
+//        bodies.add(body4);
         this.bodies = bodies;
 
-        world = new World(bodies, field);
-        screenConverter = new ScreenConverter(field.getRectangle(), 1000, 1000); //magic number
+        world = new World(bodies, space);
+        screenConverter = new ScreenConverter(space.getRectangle(), 1000, 1000); //magic number
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
         this.addMouseWheelListener(this);
@@ -84,7 +101,8 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
         screenConverter.setWs(getHeight());  //че нибудь придумать
         screenConverter.setHs(getHeight());
         BufferedImage bi = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
-        IWorldDrawer worldDrawer = new WorldDrawer((Graphics2D) bi.getGraphics(), screenConverter);
+        Graphics2D graphics2D = (Graphics2D) bi.getGraphics();
+        IWorldDrawer worldDrawer = new WorldDrawer(graphics2D, screenConverter);
         worldDrawer.draw(world);
         g.drawImage(bi, 0, 0, null);
     }
@@ -158,7 +176,7 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
     private Pair<HeavenlyBody, ScreenPoint> getGrab(ScreenPoint grabPoint) {
         Vector2 grab = screenConverter.s2r(grabPoint);
         double x = grab.getX(), y = grab.getY();
-        for (HeavenlyBody heavenlyBody : world.getHeavenlyBodies()) {
+        for (HeavenlyBody heavenlyBody : world.getSolarSystem().getBodies()) {
             Vector2 center = heavenlyBody.getPosition();
             double r = heavenlyBody.getRadius(), centerX = center.getX(), centerY = center.getY();
             if ((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY) <= r * r)
@@ -167,10 +185,6 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
         return null;
     }
 
-    public void clear() {
-        world.setHeavenlyBodies(bodies);
-
-    }
 
     @Override
     public void mouseDragged(MouseEvent e) {
@@ -221,19 +235,12 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
 
     @Override
     public void mouseMoved(MouseEvent e) {
-        if (shift) {
-            mouseMovedForce(e);
-        }
+
     }
 
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
-        if (shift) {
-            changeMu(e);
-            return;
-        }
-
         int clicks = e.getWheelRotation();
         double zoom = 1;
         double coefficient = clicks < 0 ? ZOOM_INCREASE : ZOOM_DECREASE;
@@ -269,45 +276,4 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
             repaint();
         }
     }
-
-
-    public void mousePressedForce(MouseEvent e) {
-        int direction = 0;
-        if (e.getButton() == MouseEvent.BUTTON1)
-            direction = 1;
-        else if (e.getButton() == MouseEvent.BUTTON3)
-            direction = -1;
-        world.getExternalForce().setValue(1000000 * direction);
-    }
-
-
-    public void mouseReleasedForce(MouseEvent e) {
-        world.getExternalForce().setValue(0);
-    }
-
-
-    public void mouseDraggedForce(MouseEvent e) {
-        world.getExternalForce().setLocation(screenConverter.s2r(new ScreenPoint(e.getX(), e.getY())));
-    }
-
-
-    public void mouseMovedForce(MouseEvent e) {
-        world.getExternalForce().setLocation(screenConverter.s2r(new ScreenPoint(e.getX(), e.getY())));
-    }
-
-
-    public void changeMu(MouseWheelEvent e) {
-        double oldMu = world.getField().getMu();
-        oldMu = Math.round(oldMu * 100 + e.getWheelRotation()) * 0.01;
-
-        if (oldMu < -1)
-            oldMu = -1;
-        else if (oldMu > 1)
-            oldMu = 1;
-        else if (Math.abs(oldMu) < 0.005)
-            oldMu = 0;
-        world.getField().setMu(oldMu);
-    }
-
-
 }

@@ -1,6 +1,6 @@
 package drawers;
 
-import engine.spaceObjects.HeavenlyBody;
+import engine.HeavenlyBody;
 
 public interface ISpaceBodyDrawer {
 

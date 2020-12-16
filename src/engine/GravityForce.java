@@ -3,7 +3,6 @@
  * and open the template in the editor.
  */
 package engine;
-import engine.spaceObjects.HeavenlyBody;
 import math.Vector2;
 
 import static engine.Constants.G;
@@ -13,11 +12,11 @@ import static engine.Constants.G;
  *
  * @author Alexey
  */
-public class ForceSource {
+public class GravityForce {
     private Vector2 location;
     private double value;
 
-    public ForceSource(Vector2 location) {
+    public GravityForce(Vector2 location) {
         this.location = location;
         value = 0;
     }
@@ -27,6 +26,7 @@ public class ForceSource {
         double m1 = body1.getMass(), m2 = body2.getMass();
         return G * m1 * m2 / (r * r);
     }
+
 
     public Vector2 getLocation() {
         return location;
@@ -44,12 +44,11 @@ public class ForceSource {
         this.value = value;
     }
 
-    /**
-     * Вычисляет вектор силы в заданной точке
-     *
-     * @param p Точка, для которой производят вычисления
-     * @return Вектор силы
-     */
+    public Vector2 getForceAt(HeavenlyBody body) {
+        if (Math.abs(value) < 1e-12)
+            return new Vector2(0, 0);
+        return location.minus(body.getPosition()).normalize().mul(value);
+    }
 
     public Vector2 getForceAt(Vector2 p) {
         if (Math.abs(value) < 1e-12)

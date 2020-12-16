@@ -5,14 +5,10 @@
 package engine;
 
 
-import engine.spaceObjects.HeavenlyBody;
-import engine.spaceObjects.Orbit;
 import math.Vector2;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
+import java.awt.*;
+import java.util.*;
 
 /**
  * Класс, описывающий весь мир, в целом.
@@ -20,9 +16,25 @@ import java.util.Set;
  * @author Alexey
  */
 public class World {
-    private Set<HeavenlyBody> heavenlyBodies;
+    private SolarSystem solarSystem;
     private Map<HeavenlyBody, Orbit> orbits;
-    private Field field;
+    private Map<HeavenlyBody, Explosion> explosions;
+    private Space space;
+
+    public World(Set<HeavenlyBody> heavenlyBodies, Space space) {
+        this.solarSystem = new SolarSystem(heavenlyBodies);
+        this.space = space;
+        this.explosions = new HashMap<>();
+        initMap();
+    }
+
+    public Map<HeavenlyBody, Explosion> getExplosions() {
+        return explosions;
+    }
+
+    public void setExplosions(Map<HeavenlyBody, Explosion> explosions) {
+        this.explosions = explosions;
+    }
 
     public Map<HeavenlyBody, Orbit> getOrbits() {
         return orbits;
@@ -32,20 +44,27 @@ public class World {
         this.orbits = orbits;
     }
 
-    private ForceSource externalForce;
-
-    public World(Set<HeavenlyBody> heavenlyBodies, Field field) {
-        this.heavenlyBodies = heavenlyBodies;
-        this.field = field;
-        this.externalForce = new ForceSource(field.getRectangle().getCenter());
-        initMap();
+    public void clear() {
+        solarSystem.clear();
+        orbits.clear();
     }
 
-    private void initMap() {
+    public void initMap() {
         orbits = new HashMap<>();
-        for (HeavenlyBody body : heavenlyBodies) {
+        for (HeavenlyBody body : solarSystem.getBodies()) {
             orbits.put(body, new Orbit(new LinkedList<>()));
         }
+    }
+
+    private void removeExplosion() {
+        Map.Entry<HeavenlyBody, Explosion> wasRemoved  = null;
+        for (Map.Entry<HeavenlyBody, Explosion> entry : explosions.entrySet()) {
+            if (!solarSystem.getBodies().contains(entry.getKey())) {
+                wasRemoved = entry;
+            }
+        }
+        if (wasRemoved != null)
+            explosions.remove(wasRemoved.getKey(), wasRemoved.getValue());
     }
 
     /**
@@ -54,70 +73,68 @@ public class World {
      * @param dt Промежуток времени, за который требуется обновить мир.
      */
     public void update(double dt) {
-        for (HeavenlyBody current : heavenlyBodies) {
-            if (current.getMass() > 2e26 * 1000) continue;
-            Vector2 F = current.getVelocity().normalize();
+//        removeExplosion();
+        for (HeavenlyBody current : solarSystem.getBodies()) {
+                current.setAxes(current.getAxes().rotate(current.getPosition(), current.getAxes(), Math.PI / 100));
 
+            boolean mustReturn = false;
+            Vector2 resultForce = new Vector2(0,0);
+            for (HeavenlyBody body : solarSystem.getBodies()) {
+                if (current.equals(body)) continue;
+//                if (bang(current, body)) {
+//                    mustReturn = true;
+//                    break;
+//                }
+                GravityForce gravityForce = new GravityForce(body.getPosition());
+                gravityForce.setValue(gravityForce.gravity(current, body));
+                Vector2 force = gravityForce.getForceAt(current.getPosition()).mul(86400D * 86400D);
+                resultForce = resultForce.plus(force);
+                System.out.println(gravityForce.getValue());
+            }
+            if (mustReturn) return;
+
+            current.setAcceleration(resultForce.mul(1 / current.getMass()));
             Vector2 newPosition = current.getPosition()
                     .plus(current.getVelocity().mul(dt))
                     .plus(current.getAcceleration().mul(dt * dt * 0.5));
+
             Vector2 newVelocity = current.getVelocity()
                     .plus(current.getAcceleration().mul(dt));
-
-            double vx = newVelocity.getX(), vy = newVelocity.getY();
-//            boolean reset = false;
-//            if (newPosition.getX() - current.getRadius() < field.getRectangle().getLeft() || newPosition.getX() + current.getRadius() > field.getRectangle().getRight()) {
-//                vx = -vx;
-//                reset = true;
-//            }
-//            if (newPosition.getY() - current.getRadius() < field.getRectangle().getBottom() || newPosition.getY() + current.getRadius() > field.getRectangle().getTop()) {
-//                vy = -vy;
-//                reset = true;
-//            }
-//            newVelocity = new Vector2(vx, vy);
-//            if (newVelocity.length() < 1e-10)
-//                newVelocity = new Vector2(0, 0);
-//            if (reset)
-//                newPosition = current.getPosition();
-
-            Vector2 mainForce = new Vector2(0, 0);
-            for (HeavenlyBody body : heavenlyBodies) {
-                if (current.equals(body)) continue;
-                externalForce.setLocation(body.getPosition());
-                externalForce.setValue(externalForce.gravity(current, body));
-                Vector2 force = externalForce.getForceAt(newPosition).mul(86400D * 86400D);
-                mainForce = mainForce.plus(force);
-            }
-            current.setAcceleration(mainForce.mul(1 / current.getMass()));
             current.setVelocity(newVelocity);
             current.setPosition(newPosition);
             Orbit orbit = orbits.get(current);
             orbit.addPoint(current);
-//            System.out.println(orbits.get(current));
-//            System.out.println("------------------------------------");
-//            System.out.println(current);
-//            System.out.println(externalForce);
+//            System.out.println("acc " + current.getAcceleration());
+//            System.out.println(resultForce);
         }
     }
 
-
-    public Field getField() {
-        return field;
+    private boolean bang(HeavenlyBody body1, HeavenlyBody body2) {
+        if (body1.collision(body2)) {
+            boolean firstIsMassive = body1.getMass() > body2.getMass();
+            HeavenlyBody poofBody = firstIsMassive ? body2 : body1;
+            explosions.put(poofBody, new Explosion(poofBody));
+            solarSystem.getBodies().remove(poofBody);
+            return true;
+        }
+        return false;
     }
 
-    public void setField(Field field) {
-        this.field = field;
+
+
+    public Space getSpace() {
+        return space;
     }
 
-    public Set<HeavenlyBody> getHeavenlyBodies() {
-        return heavenlyBodies;
+    public void setSpace(Space space) {
+        this.space = space;
     }
 
-    public void setHeavenlyBodies(Set<HeavenlyBody> heavenlyBodies) {
-        this.heavenlyBodies = heavenlyBodies;
+    public SolarSystem getSolarSystem() {
+        return solarSystem;
     }
 
-    public ForceSource getExternalForce() {
-        return externalForce;
+    public void setSolarSystem(SolarSystem solarSystem) {
+        this.solarSystem = solarSystem;
     }
 }
