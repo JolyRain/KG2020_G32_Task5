@@ -1,6 +1,5 @@
 package engine;
 
-import engine.HeavenlyBody;
 import math.Vector2;
 
 import java.util.List;
@@ -14,7 +13,7 @@ public class Orbit {
 
     public void addPoint(HeavenlyBody body) {
         path.add(body.getPosition());
-//        if (path.size() > 400) path.remove(0);
+//        if (path.size() > 4000) path.remove(0);
     }
 
     public List<Vector2> getPath() {

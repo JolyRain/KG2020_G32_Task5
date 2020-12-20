@@ -27,7 +27,6 @@ public class GravityForce {
         return G * m1 * m2 / (r * r);
     }
 
-
     public Vector2 getLocation() {
         return location;
     }

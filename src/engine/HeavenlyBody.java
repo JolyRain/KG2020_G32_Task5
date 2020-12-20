@@ -1,7 +1,6 @@
 package engine;
 
 import math.Vector2;
-import utils.Pair;
 
 import java.awt.*;
 import java.util.LinkedList;
@@ -9,22 +8,27 @@ import java.util.List;
 import java.util.Objects;
 
 public class HeavenlyBody extends PhysicalObject {
-    private double mass, radius;
+    private String name;
+    private double mass;
+    private double radius;
     private Vector2 position;
     private Vector2 velocity;
     private Vector2 acceleration;
     private Vector2 axes;
     private Color color = Color.RED;
+    private Vector2 leftAngle;
 
-    public Vector2 getAxes() {
-        return axes;
+    public HeavenlyBody(String name, double mass, double radius, Vector2 position) {
+        super(mass);
+        this.name = name;
+        this.mass = mass;
+        this.radius = radius;
+        this.position = position;
+        this.velocity = new Vector2(0, 0);
+        this.acceleration = new Vector2(0, 0);
+        this.axes = this.position.plus(new Vector2(radius, radius));
+        this.leftAngle = new Vector2(position.getX() - radius, position.getY() - radius);
     }
-
-    public void setAxes(Vector2 axes) {
-        this.axes = axes;
-    }
-
-
 
     public HeavenlyBody(double mass, double radius, Vector2 position) {
         super(mass);
@@ -36,6 +40,29 @@ public class HeavenlyBody extends PhysicalObject {
         this.axes = this.position.plus(new Vector2(radius, radius));
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Vector2 getLeftAngle() {
+        return leftAngle;
+    }
+
+    public void setLeftAngle(Vector2 leftAngle) {
+        this.leftAngle = leftAngle;
+    }
+
+    public Vector2 getAxes() {
+        return axes;
+    }
+
+    public void setAxes(Vector2 axes) {
+        this.axes = axes;
+    }
 
     public double getMass() {
         return mass;
@@ -73,10 +100,11 @@ public class HeavenlyBody extends PhysicalObject {
     }
 
     public boolean collision(HeavenlyBody object) {
-//        for (Vector2 point : object.getAnglePoints()) {\
-        boolean b = isInsidePoint(object.getPosition());
-        return b;
-//        }
+        for (Vector2 point : object.getAnglePoints()) {
+            if (isInsidePoint(point))
+                return true;
+        }
+        return false;
     }
 
     private boolean isInsidePoint(Vector2 point) {
@@ -110,6 +138,11 @@ public class HeavenlyBody extends PhysicalObject {
         return color;
     }
 
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -118,10 +151,13 @@ public class HeavenlyBody extends PhysicalObject {
         HeavenlyBody body = (HeavenlyBody) o;
         return Double.compare(body.mass, mass) == 0 &&
                 Double.compare(body.radius, radius) == 0 &&
+                Objects.equals(name, body.name) &&
 //                Objects.equals(position, body.position) &&
 //                Objects.equals(velocity, body.velocity) &&
 //                Objects.equals(acceleration, body.acceleration) &&
+//                Objects.equals(axes, body.axes) &&
                 Objects.equals(color, body.color);
+        //                Objects.equals(leftAngle, body.leftAngle);
     }
 
     @Override
@@ -137,10 +173,6 @@ public class HeavenlyBody extends PhysicalObject {
 
     @Override
     public int hashCode() {
-        return Objects.hash(mass, radius, color);
-    }
-
-    public void setColor(Color color) {
-        this.color = color;
+        return Objects.hash(name, mass, radius, color);
     }
 }

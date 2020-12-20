@@ -34,7 +34,7 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
         MouseListener, MouseMotionListener, MouseWheelListener {
     private ScreenConverter screenConverter;
     private World world;
-    private AbstractWorldTimer uwt;
+    private UpdateWorldTimer uwt;
     private Timer drawTimer;
     private boolean shift = false;
     private ScreenPoint lastPosition = null;
@@ -46,43 +46,55 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
                 new Rectangle(-2e8 * 1000, 2e8 * 1000, 4e8 * 1000, 4e8 * 1000));
 
         Set<HeavenlyBody> bodies = new HashSet<>();
-        HeavenlyBody body1 = new HeavenlyBody(1.989e27 * 1000, space.getRectangle().getWidth()/ 20, space.getRectangle().getCenter());
-        HeavenlyBody body2 = new HeavenlyBody(5.972e21 * 1000, space.getRectangle().getWidth()/ 40, new Vector2(14.95e7 * 1000, 0));
-        HeavenlyBody body3 = new HeavenlyBody(7.34e19 * 1000, space.getRectangle().getWidth()/ 160, new Vector2(17e7 * 1000, 0));
-        HeavenlyBody body4 = new HeavenlyBody(10.972e21 * 1000, space.getRectangle().getWidth() / 40, new Vector2(30.95e7 * 1000, 0));
+        HeavenlyBody sun = new HeavenlyBody("sun", 2e30, space.getRectangle().getWidth() / 20, space.getRectangle().getCenter());
+        HeavenlyBody mercury = new HeavenlyBody("mercury", 3.33e23, space.getRectangle().getWidth() / 90, new Vector2(0, 58e9));
+        HeavenlyBody venus = new HeavenlyBody("venus", 4.867e24, space.getRectangle().getWidth() / 40, new Vector2(108e9 , 0));
+        HeavenlyBody earth = new HeavenlyBody("earth", 5.972e24, space.getRectangle().getWidth() / 40, new Vector2(14.95e10 , 0));
+        HeavenlyBody mars = new HeavenlyBody("mars", 6.39e23, space.getRectangle().getWidth() / 40, new Vector2(228e9 , 0));
+        HeavenlyBody jupiter = new HeavenlyBody("jupiter", 1.898e27, space.getRectangle().getWidth() / 30, new Vector2(0 , 300e9));
+        HeavenlyBody saturn = new HeavenlyBody("saturn", 1.898e27, space.getRectangle().getWidth() / 30, new Vector2(0 , 500e9));
+        HeavenlyBody uranus = new HeavenlyBody("uranus", 1.898e27, space.getRectangle().getWidth() / 30, new Vector2(0 , 500e9));
+        HeavenlyBody neptune = new HeavenlyBody("neptune", 1.898e27, space.getRectangle().getWidth() / 30, new Vector2(0 , 500e9));
+        HeavenlyBody pluto = new HeavenlyBody("pluto", 1.898e27, space.getRectangle().getWidth() / 30, new Vector2(0 , 500e9));
 
-        body1.setVelocity(new Vector2(0, 0));
-        body2.setVelocity(new Vector2(0, 2.592e6 * 1000));
-        body3.setVelocity(new Vector2(0, (881280) * 1000));
-        body4.setVelocity(new Vector2(0, 1.592e6 * 1000));
 
+        sun.setVelocity(new Vector2(0, 0));
+        earth.setVelocity(new Vector2(0, 2.592e6 * 1000));
+        mercury.setVelocity(new Vector2(-4e9,0 ));
+        venus.setVelocity(new Vector2(0, 3e9));
+        mars.setVelocity(new Vector2(0, 2.5e9));
+        jupiter.setVelocity(new Vector2(-3e9, -3e8));
 //        Space space = new Space(
 //                new Rectangle(-10, 10, 20, 20));
 //
 //        Set<HeavenlyBody> bodies = new HashSet<>();
-//        HeavenlyBody body1 = new HeavenlyBody(10000, space.getRectangle().getWidth() / 20, space.getRectangle().getCenter());
-//        HeavenlyBody body2 = new HeavenlyBody(1, space.getRectangle().getWidth() / 40, new Vector2(10, 0));
-//        HeavenlyBody body3 = new HeavenlyBody(1, space.getRectangle().getWidth() / 40, new Vector2(6, 0));
-//        HeavenlyBody body4 = new HeavenlyBody(1, space.getRectangle().getWidth() / 40, new Vector2(10, 0));
+//        HeavenlyBody sun = new HeavenlyBody(10000, space.getRectangle().getWidth() / 20, space.getRectangle().getCenter());
+//        HeavenlyBody earth = new HeavenlyBody(1, space.getRectangle().getWidth() / 40, new Vector2(50, 0));
+//        HeavenlyBody mercury = new HeavenlyBody(1, space.getRectangle().getWidth() / 40, new Vector2(6, 0));
+//        HeavenlyBody venus = new HeavenlyBody(1, space.getRectangle().getWidth() / 40, new Vector2(10, 0));
 //
-//        body1.setVelocity(new Vector2(0, 0));
-//        body2.setVelocity(new Vector2(0, 10));
+//        sun.setVelocity(new Vector2(0, 0));
+//        earth.setVelocity(new Vector2(0, 10));
 //        body3.setVelocity(new Vector2(0, 1));
 //        body4.setVelocity(new Vector2(0, 1));
 
 
-        System.out.println(new GravityForce(new Vector2(0, 0)).gravity(body1, body2) + "////////////////////");
 
-        body1.setColor(Color.YELLOW);
-        body2.setColor(Color.BLUE);
-        body3.setColor(Color.GRAY);
-        body4.setColor(Color.GREEN);
+        sun.setColor(Color.YELLOW);
+        earth.setColor(Color.BLUE);
+        mercury.setColor(Color.GRAY);
+        venus.setColor(Color.ORANGE);
+//        mars.setColor(Color.RED);
+//        jupiter.setColor(Color.GRAY);
 
+        bodies.add(sun);
+        bodies.add(earth);
+        bodies.add(mercury);
+        bodies.add(venus);
+        bodies.add(mars);
+//        bodies.add(jupiter);
 
-        bodies.add(body1);
-        bodies.add(body2);
-//        bodies.add(body3);
-//        bodies.add(body4);
+        //        bodies.add(body4);
         this.bodies = bodies;
 
         world = new World(bodies, space);
@@ -91,18 +103,23 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
         this.addMouseMotionListener(this);
         this.addMouseWheelListener(this);
 
-        (uwt = new UpdateWorldTimer(world, 10)).start();
+//        Timer timer = new Timer(100, e -> {
+            uwt = new UpdateWorldTimer(world, 10);
+            uwt.start();
+//        });
         drawTimer = new Timer(40, this);
         drawTimer.start();
+//        timer.start();
     }
 
     @Override
     public void paint(Graphics g) {
-        screenConverter.setWs(getHeight());  //че нибудь придумать
+
+        screenConverter.setWs(getWidth());  //че нибудь придумать
         screenConverter.setHs(getHeight());
         BufferedImage bi = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics2D = (Graphics2D) bi.getGraphics();
-        IWorldDrawer worldDrawer = new WorldDrawer(graphics2D, screenConverter);
+        IWorldDrawer worldDrawer = new WorldDrawer(graphics2D, screenConverter, this);
         worldDrawer.draw(world);
         g.drawImage(bi, 0, 0, null);
     }
@@ -115,11 +132,11 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
         this.world = world;
     }
 
-    public AbstractWorldTimer getUwt() {
+    public UpdateWorldTimer getUwt() {
         return uwt;
     }
 
-    public void setUwt(AbstractWorldTimer uwt) {
+    public void setUwt(UpdateWorldTimer uwt) {
         this.uwt = uwt;
     }
 
@@ -133,12 +150,24 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        repaint();
+            repaint();
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
     }
+    //real
+//
+//    Set<HeavenlyBody> bodies = new HashSet<>();
+//    HeavenlyBody body1 = new HeavenlyBody("sun", 1.989e30, 696340e3, space.getRectangle().getCenter());
+//    HeavenlyBody body2 = new HeavenlyBody("earth", 5.972e24, 6371e3, new Vector2(149.5e9, 0));
+//    HeavenlyBody body3 = new HeavenlyBody(7.34e19 * 1000, space.getRectangle().getWidth()/ 160, new Vector2(17e7 * 1000, 0));
+//    HeavenlyBody body4 = new HeavenlyBody(10.972e21 * 1000, space.getRectangle().getWidth() / 40, new Vector2(30.95e7 * 1000, 0));
+//
+//        body1.setVelocity(new Vector2(0, 0));
+//        body2.setVelocity(new Vector2(0, 2.592e6 * 1000));
+//        body3.setVelocity(new Vector2(0, (881280) * 1000));
+//        body4.setVelocity(new Vector2(0, 1.592e6 * 1000));
 
     @Override
     public void mousePressed(MouseEvent e) {
@@ -190,28 +219,23 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
     public void mouseDragged(MouseEvent e) {
 
         if (grab) {
-            System.out.println("a");
             ScreenPoint currentPosition = new ScreenPoint(e.getX(), e.getY());
             if (getGrab(currentPosition) != null && lastPosition != null) {
-                System.out.println("s");
                 ScreenPoint position = getGrab(currentPosition).getSecond();
                 HeavenlyBody body = getGrab(currentPosition).getFirst();
                 Vector2 velocity = body.getVelocity();
-                body.setVelocity(new Vector2(0,0));
+//                body.setVelocity(new Vector2(0,0));
                 ScreenPoint deltaScreen = new ScreenPoint(
                         currentPosition.getI() - lastPosition.getI(),
                         currentPosition.getJ() - lastPosition.getJ());
-                System.out.println(deltaScreen + " ds");
                 ScreenPoint vector = new ScreenPoint(position.getI() + deltaScreen.getI(), position.getJ() + deltaScreen.getJ());
                 Vector2 deltaReal = screenConverter.s2r(vector);
-                System.out.println(deltaReal + " dr");
 //                Vector2 vector = new Vector2(
 //                        deltaReal.getX() + body.getPosition().getX(),
 //                        deltaReal.getY() + body.getPosition().getY());
-                System.out.println(vector + " v");
                 lastPosition = currentPosition;
                 body.setPosition(deltaReal);
-                body.setVelocity(velocity);
+//                body.setVelocity(velocity);
                 repaint();
             }
             return;
@@ -251,7 +275,6 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
 //        world.getField().setRectangle(rect.scale(zoom));
 
         screenConverter.scale(zoom);
-        System.out.println(zoom);
 
         repaint();
     }

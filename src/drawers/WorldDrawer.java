@@ -11,6 +11,7 @@ import screen.ScreenCoordinates;
 import screen.ScreenPoint;
 
 import java.awt.*;
+import java.awt.image.ImageObserver;
 import java.util.List;
 import java.util.*;
 
@@ -18,9 +19,9 @@ import java.util.*;
 public class WorldDrawer extends GraphicsDrawer implements IWorldDrawer {
     private ISpaceBodyDrawer spaceBodyDrawer;
 
-    public WorldDrawer(Graphics2D graphics2D, ScreenConverter screenConverter) {
+    public WorldDrawer(Graphics2D graphics2D, ScreenConverter screenConverter, ImageObserver observer) {
         super(graphics2D, screenConverter);
-        spaceBodyDrawer = new SpaceBodyDrawer(graphics2D, screenConverter);
+        spaceBodyDrawer = new SpaceBodyDrawer(graphics2D, screenConverter, observer);
     }
 
 
@@ -75,19 +76,22 @@ public class WorldDrawer extends GraphicsDrawer implements IWorldDrawer {
 
     private void drawExplosions(World world) {
         for (Map.Entry<HeavenlyBody, Explosion> exp : world.getExplosions().entrySet()) {
-            drawExplosion(exp.getValue());
+            if (exp.getValue().getRadius() > exp.getKey().getRadius() / 10) {
+                Explosion big = exp.getValue();
+                drawExplosion(big, Color.RED);
+                big.setRadius(big.getRadius() / 1.01);
+                drawExplosion(big, Color.YELLOW);
+            }
         }
     }
 
-    private void drawExplosion(Explosion explosion) {
+    private void drawExplosion(Explosion explosion, Color color) {
         Graphics2D graphics2D = getGraphics2D();
         ScreenConverter screenConverter = getScreenConverter();
         List<ScreenPoint> screenPoints = screenConverter.r2s(explosion.getPoints());
         ScreenCoordinates screenCoordinates = new ScreenCoordinates(screenPoints);
-
-        graphics2D.setColor(Color.RED);
+        graphics2D.setColor(color);
         graphics2D.fillPolygon(screenCoordinates.getXx(), screenCoordinates.getYy(), screenCoordinates.size());
-
     }
 
     private void drawPath(World world) {
@@ -106,8 +110,8 @@ public class WorldDrawer extends GraphicsDrawer implements IWorldDrawer {
         ScreenConverter screenConverter = getScreenConverter();
         for (int i = 0; i < 100; i++) {
             Vector2 star = new Vector2(
-                    Math.random() * (Math.abs(screenConverter.getXr()) + screenConverter.getWr()) - screenConverter.getWr() / 2,
-                    Math.random() * (Math.abs(screenConverter.getYr()) + screenConverter.getHr()) - screenConverter.getHr() / 2);
+                    Math.random() * (Math.abs(screenConverter.getXr()) + screenConverter.getWr()) - screenConverter.getWr(),
+                    Math.random() * (Math.abs(screenConverter.getYr()) + screenConverter.getHr()) - screenConverter.getHr());
             ScreenPoint point = screenConverter.r2s(star);
             graphics2D.setColor(Color.WHITE);
             graphics2D.fillRect(point.getI(),point.getJ(), 1,1);

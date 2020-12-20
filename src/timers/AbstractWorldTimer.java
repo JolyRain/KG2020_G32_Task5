@@ -20,7 +20,7 @@ public abstract class AbstractWorldTimer {
         this.actualWorld = world;
         timer = new Timer(period, e -> worldAction(actualWorld));
     }
-    
+
     public void start() {
         timer.start();
     }
@@ -29,6 +29,10 @@ public abstract class AbstractWorldTimer {
     }
     public void setPeriod(int delay) {
         timer.setDelay(delay);
+    }
+
+    public int getPeriod() {
+        return timer.getDelay();
     }
     
     abstract void worldAction(World w);

@@ -8,22 +8,33 @@ package timers;
 import engine.World;
 
 /**
- *
  * @author Alexey
  */
 public class UpdateWorldTimer extends AbstractWorldTimer {
 
     private long last;
+    private int speedAnimation = 10;
+
     public UpdateWorldTimer(World world, int period) {
         super(world, period);
     }
-    
-    @Override
-    void worldAction(World w) {
-        long time = System.currentTimeMillis();
-        actualWorld.update((time - last) * 0.001 * 100);
-        last = time;
+
+    public int getSpeedAnimation() {
+        return speedAnimation;
     }
+
+    public void setSpeedAnimation(int speedAnimation) {
+        this.speedAnimation = speedAnimation;
+    }
+
+    @Override
+    public void worldAction(World w) {
+        long time = System.currentTimeMillis();
+        actualWorld.allUpdate(speedAnimation, (time - last) * 0.001 * speedAnimation / 2);
+        last = time;
+        actualWorld.setLastTime(last);
+    }
+
 
     @Override
     public void start() {

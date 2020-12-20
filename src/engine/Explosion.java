@@ -17,6 +17,8 @@ public class Explosion {
         generatePoints();
     }
 
+    public Explosion() {}
+
     public Explosion(double radius, Vector2 position) {
         this.radius = radius;
         this.position = position;
@@ -62,6 +64,8 @@ public class Explosion {
 
     public void setRadius(double radius) {
         this.radius = radius;
+        points.clear();
+        generatePoints();
     }
 
     public Vector2 getPosition() {

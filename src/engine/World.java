@@ -7,8 +7,10 @@ package engine;
 
 import math.Vector2;
 
-import java.awt.*;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Класс, описывающий весь мир, в целом.
@@ -46,18 +48,20 @@ public class World {
 
     public void clear() {
         solarSystem.clear();
+        explosions.clear();
         orbits.clear();
     }
 
     public void initMap() {
         orbits = new HashMap<>();
         for (HeavenlyBody body : solarSystem.getBodies()) {
+//            if (body.getName().equals("sun")) continue;
             orbits.put(body, new Orbit(new LinkedList<>()));
         }
     }
 
     private void removeExplosion() {
-        Map.Entry<HeavenlyBody, Explosion> wasRemoved  = null;
+        Map.Entry<HeavenlyBody, Explosion> wasRemoved = null;
         for (Map.Entry<HeavenlyBody, Explosion> entry : explosions.entrySet()) {
             if (!solarSystem.getBodies().contains(entry.getKey())) {
                 wasRemoved = entry;
@@ -72,40 +76,59 @@ public class World {
      *
      * @param dt Промежуток времени, за который требуется обновить мир.
      */
+    private double lastTime;
+
+    public double getLastTime() {
+        return lastTime;
+    }
+
+    public void setLastTime(double lastTime) {
+        this.lastTime = lastTime;
+    }
+
+
+    public void allUpdate(int delimiter, double dt) {
+        for (int i = 0; i < delimiter; i++) {
+            update(dt / delimiter);
+        }
+    }
+
+
+
     public void update(double dt) {
 //        removeExplosion();
         for (HeavenlyBody current : solarSystem.getBodies()) {
-                current.setAxes(current.getAxes().rotate(current.getPosition(), current.getAxes(), Math.PI / 100));
+//            current.setAxes(current.getAxes().rotate(current.getPosition(), current.getAxes(), Math.PI / 100));
+
+            Vector2 newPosition = current.getPosition()
+                    .plus(current.getVelocity().mul(dt))
+                    .plus(current.getAcceleration().mul(dt * dt * 0.5));
+            Vector2 newVelocity = current.getVelocity()
+                    .plus(current.getAcceleration().mul(dt));
 
             boolean mustReturn = false;
-            Vector2 resultForce = new Vector2(0,0);
+            Vector2 resultForce = new Vector2(0, 0);
             for (HeavenlyBody body : solarSystem.getBodies()) {
                 if (current.equals(body)) continue;
-//                if (bang(current, body)) {
-//                    mustReturn = true;
-//                    break;
-//                }
+                if (bang(current, body)) {
+                    mustReturn = true;
+                    break;
+                }
                 GravityForce gravityForce = new GravityForce(body.getPosition());
                 gravityForce.setValue(gravityForce.gravity(current, body));
                 Vector2 force = gravityForce.getForceAt(current.getPosition()).mul(86400D * 86400D);
                 resultForce = resultForce.plus(force);
-                System.out.println(gravityForce.getValue());
             }
             if (mustReturn) return;
 
             current.setAcceleration(resultForce.mul(1 / current.getMass()));
-            Vector2 newPosition = current.getPosition()
-                    .plus(current.getVelocity().mul(dt))
-                    .plus(current.getAcceleration().mul(dt * dt * 0.5));
-
-            Vector2 newVelocity = current.getVelocity()
-                    .plus(current.getAcceleration().mul(dt));
             current.setVelocity(newVelocity);
             current.setPosition(newPosition);
-            Orbit orbit = orbits.get(current);
-            orbit.addPoint(current);
+            if (orbits.containsKey(current)) {
+                Orbit orbit = orbits.get(current);
+                orbit.addPoint(current);
+            }
 //            System.out.println("acc " + current.getAcceleration());
-//            System.out.println(resultForce);
         }
     }
 
@@ -119,7 +142,6 @@ public class World {
         }
         return false;
     }
-
 
 
     public Space getSpace() {
