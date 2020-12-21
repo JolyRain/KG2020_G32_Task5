@@ -21,10 +21,35 @@ public class GravityForce {
         value = 0;
     }
 
+    public GravityForce() {
+    }
+
     public double gravity(HeavenlyBody body1, HeavenlyBody body2) {
         double r = body1.getPosition().minus(body2.getPosition()).length();
         double m1 = body1.getMass(), m2 = body2.getMass();
         return G * m1 * m2 / (r * r);
+    }
+
+    public Vector2 countSystemForce(HeavenlyBody body, SolarSystem system, double dt) {
+//        Vector2 newPosition = body.getPosition()
+//                .plus(body.getVelocity().mul(dt))
+//                .plus(body.getAcceleration().mul(dt * dt * 0.5));
+//        Vector2 newVelocity = body.getVelocity()
+//                .plus(body.getAcceleration().mul(dt));
+
+        Vector2 resultForce = new Vector2(0, 0);
+        for (HeavenlyBody otherPlanet : system.getBodies()) {
+            if (body.equals(otherPlanet)) continue;
+            this.location = otherPlanet.getPosition();
+            this.value = gravity(body, otherPlanet);
+            Vector2 force = getForceAt(body.getPosition()).mul(86400D * 86400D);
+            resultForce = resultForce.plus(force);
+        }
+        return resultForce;
+//        body.setAcceleration(resultForce.mul(1 / body.getMass()));
+//        body.setVelocity(newVelocity);
+//        body.setPosition(newPosition);
+
     }
 
     public Vector2 getLocation() {

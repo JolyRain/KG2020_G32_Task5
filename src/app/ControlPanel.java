@@ -79,7 +79,7 @@ public class ControlPanel extends JPanel {
         });
 
 
-        BoundedRangeModel model = new DefaultBoundedRangeModel(10, 0, 0, 200);
+        BoundedRangeModel model = new DefaultBoundedRangeModel(50, 0, 0, 200);
 
         // Создание ползунков
         JSlider speedSlider = new JSlider(model);

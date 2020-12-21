@@ -1,10 +1,6 @@
 package drawers;
 
-import engine.Explosion;
-import engine.Space;
-import engine.World;
-import engine.HeavenlyBody;
-import engine.Orbit;
+import engine.*;
 import math.Vector2;
 import screen.ScreenConverter;
 import screen.ScreenCoordinates;
@@ -12,21 +8,30 @@ import screen.ScreenPoint;
 
 import java.awt.*;
 import java.awt.image.ImageObserver;
+import java.util.Collection;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
 
 
 public class WorldDrawer extends GraphicsDrawer implements IWorldDrawer {
     private ISpaceBodyDrawer spaceBodyDrawer;
+    private boolean showOrbits = true;
+    private boolean showNames = false;
+
+    public void setShowNames(boolean showNames) {
+        this.showNames = showNames;
+    }
+
+    public void setShowOrbits(boolean showOrbits) {
+        this.showOrbits = showOrbits;
+    }
 
     public WorldDrawer(Graphics2D graphics2D, ScreenConverter screenConverter, ImageObserver observer) {
         super(graphics2D, screenConverter);
         spaceBodyDrawer = new SpaceBodyDrawer(graphics2D, screenConverter, observer);
     }
 
-
     public WorldDrawer() {
-
     }
 
     public ISpaceBodyDrawer getSpaceBodyDrawer() {
@@ -41,16 +46,20 @@ public class WorldDrawer extends GraphicsDrawer implements IWorldDrawer {
     public void draw(World world) {
         drawSpace(world);
         drawSpaceObjects(world.getSolarSystem().getBodies());
-        drawLegend(world);
+        if (showNames) drawLegend(world);
         drawExplosions(world);
     }
 
     private void drawLegend(World world) {
-        Space space = world.getSpace();
-//        GravityForce externalForce = world.getExternalForce();
-//        getGraphics2D().setColor(Color.WHITE);
-//        getGraphics2D().drawString(String.format("Mu=%.2f", field.getMu()), 10, 30);
-//        getGraphics2D().drawString(String.format("F=%.0f", externalForce.getValue()), 10, 50);
+        ScreenConverter screenConverter = getScreenConverter();
+        Graphics2D graphics2D = getGraphics2D();
+        graphics2D.setColor(Color.WHITE);
+        for (HeavenlyBody body : world.getSolarSystem().getBodies()) {
+            ScreenPoint position = screenConverter.r2s(body.getPosition());
+            int radiusHoriz = screenConverter.r2sDistanceH(body.getRadius());
+            int radiusVert = screenConverter.r2sDistanceV(body.getRadius());
+            graphics2D.drawString(body.getName(), position.getI() - radiusHoriz, position.getJ() - radiusVert);
+        }
     }
 
     private void drawSpace(World world) {
@@ -65,7 +74,11 @@ public class WorldDrawer extends GraphicsDrawer implements IWorldDrawer {
 //        graphics2D.setColor(Color.RED);
 //        graphics2D.drawRect(tl.getI(), tl.getJ(), w, h);
 //        drawStars();
-        drawPath(world);
+        if (showOrbits) {
+            drawPath(world);
+        } else {
+            world.clearOrbits();
+        }
     }
 
     private void drawSpaceObjects(Collection<HeavenlyBody> heavenlyBodies) {
@@ -114,7 +127,7 @@ public class WorldDrawer extends GraphicsDrawer implements IWorldDrawer {
                     Math.random() * (Math.abs(screenConverter.getYr()) + screenConverter.getHr()) - screenConverter.getHr());
             ScreenPoint point = screenConverter.r2s(star);
             graphics2D.setColor(Color.WHITE);
-            graphics2D.fillRect(point.getI(),point.getJ(), 1,1);
+            graphics2D.fillRect(point.getI(), point.getJ(), 1, 1);
         }
     }
 

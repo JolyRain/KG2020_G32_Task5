@@ -22,12 +22,25 @@ public class World {
     private Map<HeavenlyBody, Orbit> orbits;
     private Map<HeavenlyBody, Explosion> explosions;
     private Space space;
+    private GravityForce force;
+    private boolean gravity = true;
+    /**
+     * Метод обновления состояния мира за указанное время
+     *
+     * @param dt Промежуток времени, за который требуется обновить мир.
+     */
+    private double lastTime;
 
     public World(Set<HeavenlyBody> heavenlyBodies, Space space) {
         this.solarSystem = new SolarSystem(heavenlyBodies);
         this.space = space;
         this.explosions = new HashMap<>();
         initMap();
+        force = new GravityForce();
+    }
+
+    public void setGravity(boolean gravity) {
+        this.gravity = gravity;
     }
 
     public Map<HeavenlyBody, Explosion> getExplosions() {
@@ -55,8 +68,14 @@ public class World {
     public void initMap() {
         orbits = new HashMap<>();
         for (HeavenlyBody body : solarSystem.getBodies()) {
-//            if (body.getName().equals("sun")) continue;
+            if (body.getName().equals("sun")) continue;
             orbits.put(body, new Orbit(new LinkedList<>()));
+        }
+    }
+
+    public void clearOrbits() {
+        for (Map.Entry<HeavenlyBody, Orbit> entry : orbits.entrySet()) {
+            entry.getValue().getPath().clear();
         }
     }
 
@@ -71,13 +90,6 @@ public class World {
             explosions.remove(wasRemoved.getKey(), wasRemoved.getValue());
     }
 
-    /**
-     * Метод обновления состояния мира за указанное время
-     *
-     * @param dt Промежуток времени, за который требуется обновить мир.
-     */
-    private double lastTime;
-
     public double getLastTime() {
         return lastTime;
     }
@@ -88,59 +100,52 @@ public class World {
 
 
     public void allUpdate(int delimiter, double dt) {
+        deleteBlownUpPlanets();
         for (int i = 0; i < delimiter; i++) {
             update(dt / delimiter);
         }
     }
 
 
-
     public void update(double dt) {
-//        removeExplosion();
+        deleteBlownUpPlanets();
         for (HeavenlyBody current : solarSystem.getBodies()) {
-//            current.setAxes(current.getAxes().rotate(current.getPosition(), current.getAxes(), Math.PI / 100));
-
             Vector2 newPosition = current.getPosition()
                     .plus(current.getVelocity().mul(dt))
                     .plus(current.getAcceleration().mul(dt * dt * 0.5));
             Vector2 newVelocity = current.getVelocity()
                     .plus(current.getAcceleration().mul(dt));
 
-            boolean mustReturn = false;
             Vector2 resultForce = new Vector2(0, 0);
-            for (HeavenlyBody body : solarSystem.getBodies()) {
-                if (current.equals(body)) continue;
-                if (bang(current, body)) {
-                    mustReturn = true;
-                    break;
-                }
-                GravityForce gravityForce = new GravityForce(body.getPosition());
-                gravityForce.setValue(gravityForce.gravity(current, body));
-                Vector2 force = gravityForce.getForceAt(current.getPosition()).mul(86400D * 86400D);
-                resultForce = resultForce.plus(force);
-            }
-            if (mustReturn) return;
+            if (gravity)
+                resultForce = force.countSystemForce(current, solarSystem, dt);
 
             current.setAcceleration(resultForce.mul(1 / current.getMass()));
             current.setVelocity(newVelocity);
             current.setPosition(newPosition);
+
             if (orbits.containsKey(current)) {
                 Orbit orbit = orbits.get(current);
                 orbit.addPoint(current);
             }
-//            System.out.println("acc " + current.getAcceleration());
         }
     }
 
-    private boolean bang(HeavenlyBody body1, HeavenlyBody body2) {
+    private void bang(HeavenlyBody body1, HeavenlyBody body2) {
         if (body1.collision(body2)) {
             boolean firstIsMassive = body1.getMass() > body2.getMass();
             HeavenlyBody poofBody = firstIsMassive ? body2 : body1;
             explosions.put(poofBody, new Explosion(poofBody));
-            solarSystem.getBodies().remove(poofBody);
-            return true;
         }
-        return false;
+    }
+
+    private void deleteBlownUpPlanets() {
+        for (HeavenlyBody current : solarSystem.getBodies()) {
+            for (HeavenlyBody body : solarSystem.getBodies()) {
+                bang(current, body);
+            }
+        }
+        solarSystem.getBodies().removeIf(body -> explosions.containsKey(body));
     }
 
 

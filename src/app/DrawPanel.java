@@ -3,17 +3,16 @@ package app;/*
  * and open the template in the editor.
  */
 
-import drawers.IWorldDrawer;
+import defaults.Defaults;
+import drawers.SpaceBodyDrawer;
 import drawers.WorldDrawer;
-import engine.Space;
-import engine.GravityForce;
-import engine.World;
 import engine.HeavenlyBody;
+import engine.Space;
+import engine.World;
 import math.Rectangle;
 import math.Vector2;
 import screen.ScreenConverter;
 import screen.ScreenPoint;
-import timers.AbstractWorldTimer;
 import timers.UpdateWorldTimer;
 import utils.Pair;
 
@@ -22,6 +21,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static defaults.Defaults.ZOOM_DECREASE;
@@ -39,32 +39,13 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
     private boolean shift = false;
     private ScreenPoint lastPosition = null;
     private Set<HeavenlyBody> bodies = new HashSet<>();
-
-    public DrawPanel() {
-        super();
-        Space space = new Space(
-                new Rectangle(-2e8 * 1000, 2e8 * 1000, 4e8 * 1000, 4e8 * 1000));
-
-        Set<HeavenlyBody> bodies = new HashSet<>();
-        HeavenlyBody sun = new HeavenlyBody("sun", 2e30, space.getRectangle().getWidth() / 20, space.getRectangle().getCenter());
-        HeavenlyBody mercury = new HeavenlyBody("mercury", 3.33e23, space.getRectangle().getWidth() / 90, new Vector2(0, 58e9));
-        HeavenlyBody venus = new HeavenlyBody("venus", 4.867e24, space.getRectangle().getWidth() / 40, new Vector2(108e9 , 0));
-        HeavenlyBody earth = new HeavenlyBody("earth", 5.972e24, space.getRectangle().getWidth() / 40, new Vector2(14.95e10 , 0));
-        HeavenlyBody mars = new HeavenlyBody("mars", 6.39e23, space.getRectangle().getWidth() / 40, new Vector2(228e9 , 0));
-        HeavenlyBody jupiter = new HeavenlyBody("jupiter", 1.898e27, space.getRectangle().getWidth() / 30, new Vector2(0 , 300e9));
-        HeavenlyBody saturn = new HeavenlyBody("saturn", 1.898e27, space.getRectangle().getWidth() / 30, new Vector2(0 , 500e9));
-        HeavenlyBody uranus = new HeavenlyBody("uranus", 1.898e27, space.getRectangle().getWidth() / 30, new Vector2(0 , 500e9));
-        HeavenlyBody neptune = new HeavenlyBody("neptune", 1.898e27, space.getRectangle().getWidth() / 30, new Vector2(0 , 500e9));
-        HeavenlyBody pluto = new HeavenlyBody("pluto", 1.898e27, space.getRectangle().getWidth() / 30, new Vector2(0 , 500e9));
+    private WorldDrawer worldDrawer = new WorldDrawer();
+    private boolean grab = false;
 
 
-        sun.setVelocity(new Vector2(0, 0));
-        earth.setVelocity(new Vector2(0, 2.592e6 * 1000));
-        mercury.setVelocity(new Vector2(-4e9,0 ));
-        venus.setVelocity(new Vector2(0, 3e9));
-        mars.setVelocity(new Vector2(0, 2.5e9));
-        jupiter.setVelocity(new Vector2(-3e9, -3e8));
-//        Space space = new Space(
+    DrawPanel() {
+
+        //        Space space = new Space(
 //                new Rectangle(-10, 10, 20, 20));
 //
 //        Set<HeavenlyBody> bodies = new HashSet<>();
@@ -80,32 +61,17 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
 
 
 
-        sun.setColor(Color.YELLOW);
-        earth.setColor(Color.BLUE);
-        mercury.setColor(Color.GRAY);
-        venus.setColor(Color.ORANGE);
-//        mars.setColor(Color.RED);
-//        jupiter.setColor(Color.GRAY);
-
-        bodies.add(sun);
-        bodies.add(earth);
-        bodies.add(mercury);
-        bodies.add(venus);
-        bodies.add(mars);
-//        bodies.add(jupiter);
-
         //        bodies.add(body4);
-        this.bodies = bodies;
-
-        world = new World(bodies, space);
-        screenConverter = new ScreenConverter(space.getRectangle(), 1000, 1000); //magic number
+        this.bodies = Defaults.PLANETS;
+        world = new World(bodies, Defaults.SPACE);
+        screenConverter = new ScreenConverter(Defaults.SPACE.getRectangle(), 1000, 1000); //magic number
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
-        this.addMouseWheelListener(this);
+            this.addMouseWheelListener(this);
 
 //        Timer timer = new Timer(100, e -> {
-            uwt = new UpdateWorldTimer(world, 10);
-            uwt.start();
+        uwt = new UpdateWorldTimer(world, 10);
+        uwt.start();
 //        });
         drawTimer = new Timer(40, this);
         drawTimer.start();
@@ -114,14 +80,24 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
 
     @Override
     public void paint(Graphics g) {
-
         screenConverter.setWs(getWidth());  //че нибудь придумать
         screenConverter.setHs(getHeight());
         BufferedImage bi = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics2D = (Graphics2D) bi.getGraphics();
-        IWorldDrawer worldDrawer = new WorldDrawer(graphics2D, screenConverter, this);
+        worldDrawer.setGraphics2D(graphics2D);
+        worldDrawer.setScreenConverter(screenConverter);
+        worldDrawer.setSpaceBodyDrawer(new SpaceBodyDrawer(graphics2D, screenConverter, this));
+//        worldDrawer = new WorldDrawer(graphics2D, screenConverter, this);
         worldDrawer.draw(world);
         g.drawImage(bi, 0, 0, null);
+    }
+
+    public WorldDrawer getWorldDrawer() {
+        return worldDrawer;
+    }
+
+    public void setWorldDrawer(WorldDrawer worldDrawer) {
+        this.worldDrawer = worldDrawer;
     }
 
     public World getWorld() {
@@ -150,11 +126,7 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
 
     @Override
     public void actionPerformed(ActionEvent e) {
-            repaint();
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent e) {
+        repaint();
     }
     //real
 //
@@ -170,6 +142,10 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
 //        body4.setVelocity(new Vector2(0, 1.592e6 * 1000));
 
     @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
     public void mousePressed(MouseEvent e) {
 
         lastPosition = new ScreenPoint(e.getX(), e.getY());
@@ -179,8 +155,6 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
 
         repaint();
     }
-
-    private boolean grab = false;
 
     @Override
     public void mouseReleased(MouseEvent e) {
@@ -240,21 +214,21 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
             }
             return;
         }
-            ScreenPoint currentPosition = new ScreenPoint(e.getX(), e.getY());
-            if (lastPosition != null) {
-                ScreenPoint deltaScreen = new ScreenPoint(
-                        currentPosition.getI() - lastPosition.getI(),
-                        currentPosition.getJ() - lastPosition.getJ());
-                Vector2 deltaReal = screenConverter.s2r(deltaScreen);
-                Vector2 zeroReal = screenConverter.s2r(new ScreenPoint(0, 0));
-                Vector2 vector = new Vector2(
-                        deltaReal.getX() - zeroReal.getX(),
-                        deltaReal.getY() - zeroReal.getY());
-                screenConverter.setXr(screenConverter.getXr() - vector.getX());
-                screenConverter.setYr(screenConverter.getYr() - vector.getY());
-                lastPosition = currentPosition;
-            }
-            repaint();
+        ScreenPoint currentPosition = new ScreenPoint(e.getX(), e.getY());
+        if (lastPosition != null) {
+            ScreenPoint deltaScreen = new ScreenPoint(
+                    currentPosition.getI() - lastPosition.getI(),
+                    currentPosition.getJ() - lastPosition.getJ());
+            Vector2 deltaReal = screenConverter.s2r(deltaScreen);
+            Vector2 zeroReal = screenConverter.s2r(new ScreenPoint(0, 0));
+            Vector2 vector = new Vector2(
+                    deltaReal.getX() - zeroReal.getX(),
+                    deltaReal.getY() - zeroReal.getY());
+            screenConverter.setXr(screenConverter.getXr() - vector.getX());
+            screenConverter.setYr(screenConverter.getYr() - vector.getY());
+            lastPosition = currentPosition;
+        }
+        repaint();
     }
 
     @Override
@@ -262,19 +236,22 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
 
     }
 
+    private int scaled = 0;
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
         int clicks = e.getWheelRotation();
         double zoom = 1;
         double coefficient = clicks < 0 ? ZOOM_INCREASE : ZOOM_DECREASE;
+        scaled = clicks < 0 ? scaled + 1 : scaled - 1;
         for (int i = 0; i < Math.abs(clicks); i++) {
-            zoom *= coefficient;
+                zoom *= coefficient;
         }
-//        Rectangle rect = world.getField().getRectangle();
-//        world.getField().setRectangle(rect.scale(zoom));
+        System.out.println(scaled);
+        if (Math.abs(scaled) < 30)
+            screenConverter.scale(zoom);
+        else scaled -= Math.signum(scaled);
 
-        screenConverter.scale(zoom);
 
         repaint();
     }
@@ -299,4 +276,5 @@ public class DrawPanel extends JPanel implements ActionListener, KeyListener,
             repaint();
         }
     }
+
 }
